@@ -15,24 +15,19 @@ def index(request):
     page_list = Page.objects.order_by('-views')[:5]
     
     context_dict ={}
-    
-    
     context_dict['boldmessage'] = 'Crunchy, creamy, cookie, candy, cupcake!'
     context_dict['categories'] = category_list
     context_dict['pages'] = page_list
     
-    visitor_cookie_handler(request)
-    context_dict['visits'] = request.session['visits']
-    
-    response = render(request, 'rango/index.html', context=context_dict)
-    return response
-    #return HttpResponse("Rango says hey there partner! <a href='/rango/about/'>About</a>")
-    
+    visitor_cookie_handler(request)    
+    return render(request, 'rango/index.html', context=context_dict)
+
+
 def visitor_cookie_handler(request):
-    visits = int(request.COOKIES.get('visits', '1'))
-    last_visit_cookie = request.COOKIES.get('last_visit', str(datetime.now()))
+    visits = int(get_server_side_cookie(request, 'visits', '1'))
+    last_visit_cookie = get_server_side_cookie(request, 'last_visit', str(datetime.now()))
     last_visit_time = datetime.strptime(last_visit_cookie[:-7],'%Y-%m-%d %H:%M:%S')
-    if (datetime.now() - last_visit_time).seconds > 0:
+    if (datetime.now() - last_visit_time).days > 0:
         visits = visits + 1
         request.session['last_visit'] = str(datetime.now())
     else:
@@ -48,12 +43,12 @@ def get_server_side_cookie(request, cookie, default_val=None):
 
 def about(request):
     
-    return render(request, 'rango/about.html')
-    #return HttpResponse("Rango says here is the about page. <a href='/rango/'>Index</a>")
+    context_dict = {}
+    visitor_cookie_handler(request)        
+    context_dict['visits'] = request.session['visits']
 
-def greet(request):
-    contex_dictionary = {'greetings': 'Hello my dear fellow programmer, welcome aboard!'}
-    return render(request, 'rango/greetings.html', context = contex_dictionary)
+    return render(request, 'rango/about.html', context= context_dict)
+
 
 
 def show_category(request, category_name_slug):
@@ -164,7 +159,7 @@ def user_login(request):
     
 @login_required
 def restricted(request):
-    return HttpResponse("Since you're logged in, you can see this text!")
+    return render(request, 'rango/restricted.html')
 
 @login_required
 def user_logout(request):
